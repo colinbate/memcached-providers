@@ -14,13 +14,20 @@ namespace Enyim.Caching.Web
 {
 	public class MembaseSessionStateProvider : SessionStateStoreProviderBase
 	{
-		private IMemcachedClient client;
+		private static readonly object syncLock = new object();
+		/// <summary>
+		/// AppDomain wide memcached/membase client
+		/// </summary>
+		private static IMemcachedClient client;
 
 		public override void Initialize(string name, System.Collections.Specialized.NameValueCollection config)
 		{
 			base.Initialize(name, config);
-			this.client = ProviderHelper.GetClient(name, config, () => (IMemcachedClientFactory)new MembaseClientFactory());
-
+			
+			lock (syncLock) {
+				if (client ==null)
+					client = ProviderHelper.GetClient(name, config, () => (IMemcachedClientFactory) new MembaseClientFactory());
+			}
 			ProviderHelper.CheckForUnknownAttributes(config);
 		}
 
@@ -39,12 +46,12 @@ namespace Enyim.Caching.Web
 				Timeout = timeout
 			};
 
-			e.Save(this.client, id, false, false);
+			e.Save(client, id, false, false);
 		}
 
 		public override void Dispose()
 		{
-			client.Dispose();
+			
 		}
 
 		public override void EndRequest(HttpContext context) { }
@@ -74,7 +81,7 @@ namespace Enyim.Caching.Web
 			lockAge = TimeSpan.Zero;
 			actions = SessionStateActions.None;
 
-			var e = SessionStateItem.Load(this.client, id, false);
+			var e = SessionStateItem.Load(client, id, false);
 			if (e == null) return null;
 
 			if (acquireLock)
@@ -94,7 +101,7 @@ namespace Enyim.Caching.Web
 					e.Flag = SessionStateActions.None;
 
 					// try to update the item in the store
-					if (e.Save(this.client, id, true, true))
+					if (e.Save(client, id, true, true))
 					{
 						locked = true;
 						lockId = e.LockId;
@@ -103,7 +110,7 @@ namespace Enyim.Caching.Web
 					}
 
 					// it has been modifed between we loaded and tried to save it
-					e = SessionStateItem.Load(this.client, id, false);
+					e = SessionStateItem.Load(client, id, false);
 					if (e == null) return null;
 				}
 			}
@@ -126,14 +133,14 @@ namespace Enyim.Caching.Web
 				return;
 
 			var tmp = (ulong)lockId;
-			var e = SessionStateItem.Load(this.client, id, true);
+			var e = SessionStateItem.Load(client, id, true);
 
 			if (e != null && e.LockId == tmp)
 			{
 				e.LockId = 0;
 				e.LockTime = DateTime.MinValue;
 
-				e.Save(this.client, id, true, true);
+				e.Save(client, id, true, true);
 			}
 		}
 
@@ -142,19 +149,19 @@ namespace Enyim.Caching.Web
 			if (!(lockId is ulong)) return;
 
 			var tmp = (ulong)lockId;
-			var e = SessionStateItem.Load(this.client, id, true);
+			var e = SessionStateItem.Load(client, id, true);
 
 			if (e != null && e.LockId == tmp)
 			{
-				SessionStateItem.Remove(this.client, id);
+				SessionStateItem.Remove(client, id);
 			}
 		}
 
 		public override void ResetItemTimeout(HttpContext context, string id)
 		{
-			var e = SessionStateItem.Load(this.client, id, false);
+			var e = SessionStateItem.Load(client, id, false);
 			if (e != null)
-				e.Save(this.client, id, false, true);
+				e.Save(client, id, false, true);
 		}
 
 		public override void SetAndReleaseItemExclusive(HttpContext context, string id, SessionStateStoreData item, object lockId, bool newItem)
@@ -168,7 +175,7 @@ namespace Enyim.Caching.Web
 					return;
 
 				var tmp = (ulong)lockId;
-				e = SessionStateItem.Load(this.client, id, true);
+				e = SessionStateItem.Load(client, id, true);
 				existing = e != null;
 
 				// if we're expecting an existing item, but
@@ -191,7 +198,7 @@ namespace Enyim.Caching.Web
 			e.LockId = 0;
 			e.LockTime = DateTime.MinValue;
 
-			e.Save(this.client, id, false, existing && !newItem);
+			e.Save(client, id, false, existing && !newItem);
 		}
 
 		public override bool SetItemExpireCallback(SessionStateItemExpireCallback expireCallback)
