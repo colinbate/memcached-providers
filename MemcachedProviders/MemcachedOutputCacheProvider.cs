@@ -2,19 +2,18 @@
 using System.Collections.Specialized;
 using System.Web.Caching;
 using Enyim.Caching.Memcached;
-using Enyim.Reflection;
 
 namespace Enyim.Caching.Web
 {
 	public class MemcachedOutputCacheProvider : OutputCacheProvider
 	{
-		private IMemcachedClient client;
+		private IMemcachedClient _client;
 
 		public override void Initialize(string name, NameValueCollection config)
 		{
 			base.Initialize(name, config);
 
-			this.client = ProviderHelper.GetClient(name, config, () => (IMemcachedClientFactory)new DefaultClientFactory());
+			_client = ProviderHelper.GetClient(name, config, () => (IMemcachedClientFactory)new DefaultClientFactory());
 
 			ProviderHelper.CheckForUnknownAttributes(config);
 		}
@@ -29,35 +28,35 @@ namespace Enyim.Caching.Web
 			utcExpiry = DateTime.SpecifyKind(utcExpiry, DateTimeKind.Utc);
 
 			// we should only store the item if it's not in the cache
-			if (this.client.Store(StoreMode.Add, key, entry, utcExpiry))
+			if (_client.Store(StoreMode.Add, key, entry, utcExpiry))
 				return null;
 
 			// if it's in the cache we should return it
-			var retval = client.Get(key);
+			var retval = _client.Get(key);
 
 			// the item got evicted between the Add and the Get (very rare)
 			// so we store it anyway, but this time with Set to make sure it gets into the cache
 			if (retval == null)
-				this.client.Store(StoreMode.Set, key, entry, utcExpiry);
+				_client.Store(StoreMode.Set, key, entry, utcExpiry);
 
 			return retval;
 		}
 
 		public override object Get(string key)
 		{
-			return this.client.Get(key);
+			return _client.Get(key);
 		}
 
 		public override void Remove(string key)
 		{
-			this.client.Remove(key);
+			_client.Remove(key);
 		}
 
 		public override void Set(string key, object entry, DateTime utcExpiry)
 		{
 			utcExpiry = DateTime.SpecifyKind(utcExpiry, DateTimeKind.Utc);
 
-			this.client.Store(StoreMode.Set, key, entry, utcExpiry);
+			_client.Store(StoreMode.Set, key, entry, utcExpiry);
 		}
 
 		#endregion

@@ -13,6 +13,7 @@
     <RootNamespace>TestSite</RootNamespace>
     <AssemblyName>TestSite</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <UseIISExpress>false</UseIISExpress>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Couchbase, Version=1.0.0.0, Culture=neutral, PublicKeyToken=81137140da4e57ef, processorArchitecture=MSIL">
+      <HintPath>..\lib\Couchbase.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -132,10 +136,6 @@
     <Content Include="Site.Master" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lib\EnyimMemcached\Enyim.Caching\Enyim.Caching.csproj">
-      <Project>{D438C0B3-A168-40B8-BDDD-61F0939DFF35}</Project>
-      <Name>Enyim.Caching</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MemcachedProviders\MemcachedProviders.csproj">
       <Project>{F81C6AD2-5CA2-4D44-85FA-79B321011390}</Project>
       <Name>MemcachedProviders</Name>

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Collections.Specialized;
 using Enyim.Reflection;
 
@@ -30,7 +27,7 @@ namespace Enyim.Caching.Web
 
 		public static IMemcachedClient GetClient(string name, NameValueCollection config, Func<IMemcachedClientFactory> createDefault)
 		{
-			var factory = GetFactoryInstance(ProviderHelper.GetAndRemove(config, "factory", false), createDefault);
+			var factory = GetFactoryInstance(GetAndRemove(config, "factory", false), createDefault);
 			System.Diagnostics.Debug.Assert(factory != null, "factory == null");
 
 			return factory.Create(name, config);

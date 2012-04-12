@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Configuration;
-using Membase.Configuration;
+using Couchbase.Configuration;
 
 namespace Enyim.Caching.Web
 {
@@ -11,12 +11,12 @@ namespace Enyim.Caching.Web
 		{
 			var sectionName = ProviderHelper.GetAndRemove(config, "section", false);
 			if (String.IsNullOrEmpty(sectionName))
-				return new Membase.MembaseClient();
+				return new Couchbase.CouchbaseClient();
 
-			var section = ConfigurationManager.GetSection(sectionName) as IMembaseClientConfiguration;
+			var section = ConfigurationManager.GetSection(sectionName) as ICouchbaseClientConfiguration;
 			if (section == null) throw new InvalidOperationException("Invalid config section: " + section);
 
-			return new Membase.MembaseClient(section);
+			return new Couchbase.CouchbaseClient(section);
 		}
 	}
 }
